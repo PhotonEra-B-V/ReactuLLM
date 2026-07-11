@@ -1,5 +1,7 @@
 # ReactLLM SDD — Spec-Driven Development for React
 
+<img width="720" height="405" alt="Screenshot 2026-07-11 at 18 05 21" src="https://github.com/user-attachments/assets/eb6697bd-6e4d-4e1c-8711-fecbc2bfe601" />
+
 "Vybe code no more" do LLM agentic coding the right way.
 
 A single TOML spec is the source of truth. From it we **deterministically
