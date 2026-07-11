@@ -1,5 +1,7 @@
 # ReactLLM SDD — Spec-Driven Development for React
 
+"Vybe code no more" do LLM agentic coding the right way.
+
 A single TOML spec is the source of truth. From it we **deterministically
 compile** a red component/behaviour test suite (the specification) plus an
 implementation brief for an implementing agent. This is the structural twin of
