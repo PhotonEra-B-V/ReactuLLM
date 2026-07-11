@@ -1,0 +1,37 @@
+{
+  "runs": [
+    {
+      "runId": "20260711T032559Z",
+      "completedAt": "2026-07-11T03:25:59.244Z",
+      "tool": "react-sdd@0.1.0",
+      "specs": [
+        {
+          "feature": "Search box",
+          "slug": "search_box",
+          "mode": "plan",
+          "caseCount": 4,
+          "files": [
+            "search_box.test.tsx",
+            "search_box.plan.json",
+            "BRIEF_search_box.md"
+          ],
+          "coveredScenarios": [
+            "Debounce cancellation",
+            "Debounced dispatch",
+            "Empty query is ignored",
+            "Rendering the input"
+          ],
+          "coveredIds": [
+            "M1",
+            "M2",
+            "M3",
+            "edge_1",
+            "edge_2",
+            "rule_1",
+            "rule_2"
+          ]
+        }
+      ]
+    }
+  ]
+}

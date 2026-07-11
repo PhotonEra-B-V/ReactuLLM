@@ -1,0 +1,42 @@
+# REQUEST-MODE spec for a useDebounce hook — rules/edge_cases only, NO
+# [[cases]], so the planner LLM fills the TestPlan schema. Compile with a wired
+# ChatClient:
+#   react-sdd examples/use_debounce.request.toml --out examples/generated \
+#     --chat-module ./sdd.chat.ts
+
+[meta]
+feature_name = "Use debounce"
+description = """
+A hook that returns the latest value only after it has stopped changing for
+`delayMs`. Rapid updates within the window collapse to the final value.
+"""
+async_required = true
+
+[api]
+module = "../hooks/useDebounce"
+imports = ["import { useDebounce } from '../hooks/useDebounce'"]
+signatures = ["export function useDebounce<T>(value: T, delayMs: number): T"]
+
+[[rules]]
+id = "rule_1"
+text = "Returns the initial value synchronously on first render."
+
+[[rules]]
+id = "rule_2"
+text = "After delayMs with no further change, returns the latest value."
+
+[[edge_cases]]
+id = "edge_1"
+text = "A change within the window is superseded; only the final value is returned."
+
+[[sequences]]
+mermaid = """
+sequenceDiagram
+    actor Caller
+    participant useDebounce
+    participant timer
+    Caller->>useDebounce: rerender(value=v2)
+    useDebounce->>timer: schedule(delayMs)
+    timer->>useDebounce: fire
+    useDebounce->>Caller: return v2
+"""

@@ -1,0 +1,125 @@
+# PLAN-MODE spec for a <SearchBox> — hand-written [[cases]], so NO LLM is
+# consulted: the build is fully deterministic. Compile with:
+#   react-sdd examples/search_box.plan.toml --out examples/generated
+
+[meta]
+feature_name = "Search box"
+description = """
+A debounced search input. It renders a textbox, and after the user stops typing
+for `delayMs`, it calls `onSearch` once with the current query. Empty queries
+are never dispatched, and a fresh keystroke cancels a pending dispatch.
+"""
+async_required = true
+
+[api]
+# If your app has no path aliases configured, the test imports the component by
+# a path relative to where the generated suite is written. Use an alias like
+# '@/components/SearchBox' instead if your tsconfig/jest config resolves it.
+module = "../components/SearchBox"
+imports = ["import { SearchBox } from '../components/SearchBox'"]
+signatures = [
+  "export interface SearchBoxProps { onSearch: (query: string) => void; delayMs?: number; placeholder?: string }",
+  "export function SearchBox(props: SearchBoxProps): JSX.Element",
+]
+
+[[rules]]
+id = "rule_1"
+text = "Renders a textbox using the provided placeholder."
+
+[[rules]]
+id = "rule_2"
+text = "After the user stops typing for delayMs, onSearch is called once with the query."
+
+[[edge_cases]]
+id = "edge_1"
+text = "An empty (whitespace-only) query never dispatches onSearch."
+
+[[edge_cases]]
+id = "edge_2"
+text = "A keystroke within the debounce window cancels the previous pending dispatch."
+
+# The ordered user -> component -> callback interaction contract. Message ids
+# M1..M3 are globally unique and must each be claimed by some case's `covers`.
+[[sequences]]
+mermaid = """
+sequenceDiagram
+    actor User
+    participant SearchBox
+    participant onSearch
+    User->>SearchBox: type "react"
+    SearchBox->>SearchBox: debounce delayMs
+    SearchBox->>onSearch: onSearch("react")
+"""
+
+[[fixtures]]
+name = "makeProps"
+body = [
+  "const onSearch = jest.fn<[string], void>();",
+  "return { onSearch, delayMs: 200, placeholder: 'Search…' };",
+]
+
+# --- hand-written cases ------------------------------------------------------
+
+[[cases]]
+test_name = "renders a textbox with the placeholder"
+scenario = "Rendering the input"
+given = [
+  "const props = makeProps();",
+  "render(<SearchBox {...props} />);",
+]
+when = "None"
+then = ["expect(screen.getByPlaceholderText('Search…')).toBeInTheDocument()"]
+fixtures = ["makeProps"]
+covers = ["rule_1", "M1"]
+
+[[cases]]
+test_name = "calls onSearch once after the debounce elapses"
+scenario = "Debounced dispatch"
+given = [
+  "const props = makeProps();",
+  "render(<SearchBox {...props} />);",
+]
+when = "await userEvent.type(screen.getByRole('textbox'), 'react')"
+then = [
+  "await waitFor(() => expect(props.onSearch).toHaveBeenCalledWith('react'))",
+  "expect(props.onSearch).toHaveBeenCalledTimes(1)",
+]
+fixtures = ["makeProps"]
+covers = ["rule_2", "M2", "M3"]
+is_async = true
+
+[[cases]]
+test_name = "never dispatches an empty query"
+scenario = "Empty query is ignored"
+given = [
+  "const props = makeProps();",
+  "render(<SearchBox {...props} />);",
+]
+when = "await userEvent.type(screen.getByRole('textbox'), '   ')"
+then = [
+  "await new Promise((r) => setTimeout(r, 300))",
+  "expect(props.onSearch).not.toHaveBeenCalled()",
+]
+fixtures = ["makeProps"]
+covers = ["edge_1"]
+is_async = true
+edge_case = true
+
+[[cases]]
+test_name = "a fresh keystroke cancels the pending dispatch"
+scenario = "Debounce cancellation"
+given = [
+  "const props = makeProps();",
+  "render(<SearchBox {...props} />);",
+  "const box = screen.getByRole('textbox');",
+]
+when = "await userEvent.type(box, 'reac')"
+then = [
+  "await userEvent.type(box, 't')",
+  "await waitFor(() => expect(props.onSearch).toHaveBeenCalledWith('react'))",
+  "expect(props.onSearch).toHaveBeenCalledTimes(1)",
+]
+fixtures = ["makeProps"]
+covers = ["edge_2"]
+is_async = true
+edge_case = true

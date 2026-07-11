@@ -1,0 +1,47 @@
+{
+  "name": "reactllm-sdd",
+  "version": "0.1.0",
+  "description": "Spec-Driven Development for React — one TOML spec compiles to a red Vitest + React Testing Library suite plus an implementation brief.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "react-sdd": "./dist/cli.js"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "sdd": "tsx src/cli.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "//": "This CLI only emits test SOURCE as strings; it never imports React or a test runner. The APP that consumes the generated suites supplies those (jest or vitest, ts-jest/jest-environment-jsdom or the vitest equivalent, and @testing-library/{react,user-event,jest-dom}). They are listed under peerDependencies as documentation — install them in the consuming app, not here.",
+  "dependencies": {
+    "@babel/parser": "^7.25.0",
+    "smol-toml": "^1.3.0",
+    "zod": "^3.23.0"
+  },
+  "peerDependencies": {
+    "@testing-library/jest-dom": "*",
+    "@testing-library/react": "*",
+    "@testing-library/user-event": "*",
+    "jest": "*",
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "@testing-library/jest-dom": { "optional": true },
+    "@testing-library/react": { "optional": true },
+    "@testing-library/user-event": { "optional": true },
+    "jest": { "optional": true },
+    "react": { "optional": true }
+  },
+  "devDependencies": {
+    "@babel/types": "^7.25.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
