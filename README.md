@@ -135,6 +135,88 @@ modes) → `validatePlan` → render. `strict: true` (default) raises
 always raises `PlanSafetyError` before anything runnable is written — it is
 never downgraded to a warning.
 
+## Connecting pyllum as the request-mode planner
+
+Request mode needs a model to fill the `TestPlan`. Rather than couple this
+TypeScript framework to a provider SDK, reactullm-sdd can hand that job to its
+Python twin, [pyllum](../malayopython_reticulatus_llm), through a **shared
+contract** — [`reactullm-pyllum.contract.json`](reactullm-pyllum.contract.json).
+The two frameworks connect via a static document, not live traffic: reactullm is
+a build-time compiler, so what crosses the boundary is a *schema plus
+instructions*, not a request/response stream.
+
+The contract is generated from source so it can't drift by hand — it inlines the
+planner system instructions (`SPEC_PLANNER_INSTRUCTIONS`) and the `TestPlan`
+JSON Schema (from `TestPlanSchema`). Regenerate after changing either:
+
+```bash
+npm run gen:contract   # rewrites reactullm-pyllum.contract.json, bump `version` on a schema change
+```
+
+pyllum reads that file, sends `planner_instructions` as the system prompt,
+constrains its structured-output `Chat` to `test_plan_schema`, and returns one
+`TestPlan` object. Neither repo imports the other.
+
+The connection is controlled by a **single environment variable**,
+`REACTULLM_PYLLUM_CONTRACT` (path to the contract file):
+
+- **set** → pyllum reads the contract and serves as the request-mode planner.
+- **unset** → the connection is **off**; reactullm-sdd falls back to its own
+  injected `ChatClient`, or to plan mode (which needs no model at all).
+
+```bash
+cp .env.example .env
+# then edit .env:
+#   REACTULLM_PYLLUM_CONTRACT=/absolute/path/to/reactullm/reactullm-pyllum.contract.json
+#   REACTULLM_PYLLUM_MODEL=gpt-5.4
+```
+
+The pyllum-side implementation lives in the pyllum repo — see
+[`PYLLUM_PROMPT.md`](PYLLUM_PROMPT.md) for the brief that builds it.
+
+### Bidirectional handoff — generate either side first
+
+The *planning* contract above is one-directional (reactullm tells pyllum how to
+fill a `TestPlan`). Full-stack work also needs a **handoff contract** that flows
+**both ways**, because sometimes you generate the FastAPI backend first and
+match the React front to it, and sometimes the reverse:
+
+- **backend-first** — pyllum/FastAPI generates first and writes the API surface
+  it exposes; reactullm reads it and builds a matching frontend.
+- **frontend-first** — reactullm generates first and writes the data its
+  components require; pyllum reads it and builds a matching backend.
+
+Both directions travel through **one** file in a shared directory, tagged with
+`direction` + `producer`/`consumer` so it is always clear who conforms to whom
+([`src/handoff.ts`](src/handoff.ts)). The direction is recorded in the contract
+itself, so backend-first and frontend-first generations interleave in a single
+timeline.
+
+**Only the latest generation is implemented.** Every handoff is stamped with the
+same sortable `runId` (`YYYYMMDDThhmmssZ`) used by the run bookkeeping below, and
+committed with a `HANDOFF_DONE.json` marker + append-only log
+([`src/handoffStore.ts`](src/handoffStore.ts)). A consumer implements a handoff
+only when its `runId` sorts strictly after the last one it built
+(`isNewerThanImplemented`) — so re-running an up-to-date side is a no-op, and a
+stale or half-written handoff never wins (a failed build writes no marker).
+
+The shared directory is located by one env var — the on/off switch:
+
+```bash
+# in .env:
+#   REACTULLM_PYLLUM_HANDOFF_DIR=/absolute/path/to/shared/handoff
+#
+# set   → the handoff is active; both repos read/write this shared dir
+# unset → the handoff is off
+```
+
+```
+handoff/
+  handoff.contract.json   # the latest handoff (overwritten each run)
+  HANDOFF_DONE.json       # completion marker for the latest committed run
+  .handoff-runs.json      # append-only history, oldest first
+```
+
 ## Timestamped runs & the completion marker
 
 Every successful generation is a **run**, stamped with a sortable UTC id

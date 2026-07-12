@@ -12,6 +12,7 @@
   },
   "scripts": {
     "sdd": "tsx src/cli.ts",
+    "gen:contract": "tsx scripts/gen-contract.mts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -31,17 +32,28 @@
     "react": ">=18"
   },
   "peerDependenciesMeta": {
-    "@testing-library/jest-dom": { "optional": true },
-    "@testing-library/react": { "optional": true },
-    "@testing-library/user-event": { "optional": true },
-    "jest": { "optional": true },
-    "react": { "optional": true }
+    "@testing-library/jest-dom": {
+      "optional": true
+    },
+    "@testing-library/react": {
+      "optional": true
+    },
+    "@testing-library/user-event": {
+      "optional": true
+    },
+    "jest": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@babel/types": "^7.25.0",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
-    "vitest": "^2.1.0"
+    "vitest": "^2.1.0",
+    "zod-to-json-schema": "^3.25.2"
   }
 }

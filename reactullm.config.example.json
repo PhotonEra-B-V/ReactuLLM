@@ -1,0 +1,30 @@
+{
+  "//": "Example reactullm.config.json — drop this (renamed) into your target project root. The generator walks up from --out to find it, then injects these dependency import lines into generated suites so specs stop re-typing them. Set platform to 'native' for a React Native app.",
+
+  "runner": "vitest",
+  "platform": "web",
+  "setupModule": "./sdd-setup",
+
+  "dependencies": [
+    { "name": "redux", "import": "import { Provider } from \"react-redux\";", "note": "@reduxjs/toolkit + react-redux" },
+    { "name": "store", "import": "import { configureStore } from \"@reduxjs/toolkit\";" },
+    { "name": "router", "import": "import { MemoryRouter } from \"react-router-dom\";", "note": "react-router-dom" },
+    { "name": "routerHooks", "import": "import { useNavigate, useParams } from \"react-router-dom\";" },
+    { "name": "radixTheme", "import": "import { Theme } from \"@radix-ui/themes\";", "note": "@radix-ui/themes" },
+    { "name": "radixIcons", "import": "import { MagnifyingGlassIcon } from \"@radix-ui/react-icons\";" },
+    { "name": "i18n", "import": "import { I18nextProvider } from \"react-i18next\";", "note": "react-i18next + i18next" },
+    { "name": "clsx", "import": "import clsx from \"clsx\";" },
+    { "name": "dndCore", "import": "import { DndContext } from \"@dnd-kit/core\";", "note": "@dnd-kit/core (web only)" },
+    { "name": "dndSortable", "import": "import { SortableContext } from \"@dnd-kit/sortable\";" },
+    { "name": "stripe", "import": "import { Elements } from \"@stripe/react-stripe-js\";", "note": "usually mocked in tests" }
+  ],
+
+  "importAliases": ["clsx"],
+
+  "providers": [
+    "import { MemoryRouter } from \"react-router-dom\";",
+    "import { Provider } from \"react-redux\";",
+    "import { Theme } from \"@radix-ui/themes\";",
+    "import { I18nextProvider } from \"react-i18next\";"
+  ]
+}
