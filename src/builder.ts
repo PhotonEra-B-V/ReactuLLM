@@ -14,6 +14,7 @@ import { join } from "node:path";
 import { renderBrief } from "./brief.js";
 import type { ChatClient } from "./chat.js";
 import { validatePlan } from "./checks.js";
+import { aliasImports, resolveConfig, type ResolvedConfig } from "./config.js";
 import { planFromSpec } from "./planner.js";
 import { renderSetup, renderTests } from "./renderer.js";
 import { commitRun, type RunSpecEntry, toRunId } from "./runs.js";
@@ -78,6 +79,13 @@ export interface BuildOptions {
   tomlMode?: TomlMode;
   /** Required only for request-mode specs; plan mode never touches it. */
   chat?: ChatClient;
+  /**
+   * Resolved generation config (runner/platform/dependencies) from the target
+   * project's `reactullm.config.json`. When omitted, {@link build} resolves it
+   * by walking up from `outDir` (see {@link resolveConfig}), so the CLI and
+   * library callers get project-local config automatically.
+   */
+  config?: ResolvedConfig;
   /**
    * Clock for the run id, injectable for deterministic/testable builds.
    * Defaults to the real time when the run starts.
@@ -160,9 +168,20 @@ export async function build(
   const startedAt = options.now ? options.now() : new Date();
   const runId = options.runId ?? toRunId(startedAt);
 
+  // Project-local config: dependencies to inject, runner, and web/native platform.
+  // Resolve from the output dir when the caller didn't pass one explicitly.
+  const config = options.config ?? resolveConfig({ searchFrom: outDir });
+  const renderConfig = {
+    runner: config.runner,
+    platform: config.platform,
+    setupModule: config.setupModule,
+    extraImports: aliasImports(config),
+    providers: config.providers,
+  };
+
   mkdirSync(outDir, { recursive: true });
   const setupPath = join(outDir, "sdd-setup.ts");
-  if (!existsSync(setupPath)) writeFileSync(setupPath, renderSetup(), "utf-8");
+  if (!existsSync(setupPath)) writeFileSync(setupPath, renderSetup(renderConfig), "utf-8");
 
   const results: BuildResult[] = [];
   const specEntries: RunSpecEntry[] = [];
@@ -205,7 +224,7 @@ export async function build(
     });
     if (problems.length && strict) throw new PlanValidationError(sourceName, problems);
 
-    writeFileSync(testPath, renderTests(testPlan), "utf-8");
+    writeFileSync(testPath, renderTests(testPlan, renderConfig), "utf-8");
     writeFileSync(
       briefPath,
       renderBrief(spec, testPlan, { testsPath: testPath, problems }),

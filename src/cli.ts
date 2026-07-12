@@ -10,7 +10,9 @@
 
 import type { ChatClient } from "./chat.js";
 import { build, type BuildResult, type TomlMode } from "./builder.js";
+import { resolveConfig } from "./config.js";
 import { latestRun, readManifest } from "./runs.js";
+import type { RenderConfig } from "./renderer.js";
 
 interface Args {
   source: string;
@@ -18,6 +20,9 @@ interface Args {
   apiHint: string | null;
   tomlMode: TomlMode;
   chatModule: string | null;
+  configPath: string | null;
+  platform: RenderConfig["platform"] | null;
+  runner: RenderConfig["runner"] | null;
   listRuns: boolean;
 }
 
@@ -28,6 +33,9 @@ function parseArgs(argv: string[]): Args {
     apiHint: null,
     tomlMode: "auto",
     chatModule: null,
+    configPath: null,
+    platform: null,
+    runner: null,
     listRuns: false,
   };
   const rest: string[] = [];
@@ -56,6 +64,25 @@ function parseArgs(argv: string[]): Args {
       case "--chat-module":
         args.chatModule = next();
         break;
+      case "--config":
+        args.configPath = next();
+        break;
+      case "--platform": {
+        const p = next();
+        if (p !== "web" && p !== "native") {
+          throw new Error(`--platform must be web|native, got ${p}`);
+        }
+        args.platform = p;
+        break;
+      }
+      case "--runner": {
+        const r = next();
+        if (r !== "jest" && r !== "vitest") {
+          throw new Error(`--runner must be jest|vitest, got ${r}`);
+        }
+        args.runner = r;
+        break;
+      }
       case "--list-runs":
         args.listRuns = true;
         break;
@@ -84,6 +111,7 @@ function printUsage(): void {
 Usage:
   react-sdd <source> [--out DIR] [--toml-mode auto|plan|request]
             [--api-hint TEXT] [--chat-module PATH]
+            [--config PATH] [--platform web|native] [--runner jest|vitest]
   react-sdd --list-runs [--out DIR]
 
   <source>         a .toml spec file or a directory containing them
@@ -94,6 +122,12 @@ Usage:
   --api-hint       pin the target module / existing signatures
   --chat-module    module exporting createChat(): ChatClient — required for
                    request-mode specs
+  --config         path to reactullm.config.json (default: discovered by
+                   walking up from --out); supplies dependencies, platform,
+                   runner, and providers for the target project
+  --platform       'web' (default) or 'native' (React Native Testing Library);
+                   overrides the config file
+  --runner         'jest' (default) or 'vitest'; overrides the config file
   --list-runs      print the completed-run history for --out and exit
 `,
   );
@@ -144,12 +178,30 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
 
   const chat = await loadChat(args.chatModule);
 
+  // Resolve project-local config (dependencies/platform/runner). CLI flags win
+  // over the file, which wins over defaults. Discovery walks up from --out.
+  const overrides: Partial<Pick<RenderConfig, "runner" | "platform">> = {};
+  if (args.platform) overrides.platform = args.platform;
+  if (args.runner) overrides.runner = args.runner;
+  const config = resolveConfig({
+    searchFrom: args.out,
+    configPath: args.configPath,
+    overrides,
+  });
+  if (config.sourcePath) {
+    process.stdout.write(
+      `Config: ${config.sourcePath} (platform=${config.platform}, runner=${config.runner}, ` +
+        `${config.dependencies.length} dep(s))\n`,
+    );
+  }
+
   // Show which run a fresh generation is building on top of.
   printLatest(args.out);
 
   const results: BuildResult[] = await build(args.source, args.out, {
     apiHint: args.apiHint,
     tomlMode: args.tomlMode,
+    config,
     ...(chat ? { chat } : {}),
   });
 

@@ -38,6 +38,15 @@
 export type { ChatClient, ChatMessage } from "./chat.js";
 export { validatePlan } from "./checks.js";
 export {
+  aliasImports,
+  CONFIG_FILENAME,
+  type DependencyEntry,
+  findConfigFile,
+  type ReactUllmConfig,
+  type ResolvedConfig,
+  resolveConfig,
+} from "./config.js";
+export {
   build,
   type BuildOptions,
   type BuildResult,
@@ -46,6 +55,25 @@ export {
   TOOL,
   type TomlMode,
 } from "./builder.js";
+export {
+  type ApiSurface as HandoffApiSurface,
+  ApiSurfaceSchema as HandoffApiSurfaceSchema,
+  type Endpoint,
+  EndpointSchema,
+  type HandoffContract,
+  HandoffContractSchema,
+  HandoffDirection,
+} from "./handoff.js";
+export {
+  commitHandoff,
+  HANDOFF_CONTRACT_FILENAME,
+  HANDOFF_DIR_ENV,
+  HANDOFF_DONE_FILENAME,
+  HANDOFF_MANIFEST_FILENAME,
+  handoffDir,
+  isNewerThanImplemented,
+  latestHandoff,
+} from "./handoffStore.js";
 export { planFromSpec, SPEC_PLANNER_INSTRUCTIONS } from "./planner.js";
 export {
   commitRun,
