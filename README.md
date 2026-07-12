@@ -1,4 +1,4 @@
-# ReactLLM SDD — Spec-Driven Development for React
+# ReactuLLM SDD — Spec-Driven Development for React
 
 <img width="720" height="405" alt="Screenshot 2026-07-11 at 18 05 21" src="https://github.com/user-attachments/assets/eb6697bd-6e4d-4e1c-8711-fecbc2bfe601" />
 
@@ -119,7 +119,7 @@ npm run sdd -- examples/use_debounce.request.toml --out src/__generated__ \
 Programmatically:
 
 ```ts
-import { build } from "reactllm-sdd";
+import { build } from "reactullm-sdd";
 
 // plan mode
 await build("examples/search_box.plan.toml", "src/__generated__");
@@ -187,7 +187,7 @@ react-sdd --list-runs --out out    # print the full history, newest resolved las
 Programmatically, resolve the latest completed run yourself:
 
 ```ts
-import { latestRun, readManifest } from "reactllm-sdd";
+import { latestRun, readManifest } from "reactullm-sdd";
 
 const latest = latestRun("out");        // newest RunRecord with a DONE marker, or null
 const history = readManifest("out").runs; // full append-only log

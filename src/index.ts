@@ -15,7 +15,7 @@
  * ({@link module:brief}):
  *
  * ```ts
- * import { build } from "reactllm-sdd";
+ * import { build } from "reactullm-sdd";
  * const results = await build("specs/", "src/__generated__", { chat });
  * ```
  *
