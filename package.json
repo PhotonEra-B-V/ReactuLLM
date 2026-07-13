@@ -13,6 +13,7 @@
   "scripts": {
     "sdd": "tsx src/cli.ts",
     "gen:contract": "tsx scripts/gen-contract.mts",
+    "gen:runtime": "tsx scripts/gen-runtime-contract.mts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

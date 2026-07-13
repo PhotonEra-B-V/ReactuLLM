@@ -76,6 +76,14 @@ export {
 } from "./handoffStore.js";
 export { planFromSpec, SPEC_PLANNER_INSTRUCTIONS } from "./planner.js";
 export {
+  type LLMError,
+  LLMErrorSchema,
+  type LLMRequest,
+  LLMRequestSchema,
+  type LLMResponse,
+  LLMResponseSchema,
+} from "./runtime.js";
+export {
   commitRun,
   DONE_FILENAME,
   latestRun,

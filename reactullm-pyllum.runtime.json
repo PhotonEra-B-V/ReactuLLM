@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "version": 1,
+  "title": "reactullm-sdd ⇄ pyllum runtime LLM contract",
+  "description": "Language-neutral RUNTIME contract between a React frontend (using the reactullm-sdd runtime envelope) and a FastAPI/pyllum backend. Unlike the build-time planning contract, this governs LLM calls made by the app's end users: the frontend POSTs a request honoring `request_schema` to whatever endpoint it already uses; the backend validates against that same schema, runs one (optionally structured-output) turn via pyllum, and replies with a response honoring `response_schema`. Neither repo imports the other. GENERATED from src/runtime.ts by scripts/gen-runtime-contract.mts — do not hand-edit; regenerate and bump `version`.",
+  "seam": {
+    "role": "transport-free JSON envelope; the frontend's existing HTTP client carries it",
+    "operations": {
+      "request": "frontend builds an LLMRequest (task, instructions, input, optional schema)",
+      "dispatch": "backend routes on `task`, sets the system prompt to `instructions`, and constrains its pyllum Chat to `schema` when present",
+      "response": "backend returns an LLMResponse: `data` (schema honored) or `text` (free-form) on ok=true, else a structured `error`"
+    }
+  },
+  "request_schema": {
+    "type": "object",
+    "properties": {
+      "task": {
+        "type": "string",
+        "description": "Stable identifier for what this call does, e.g. 'summarize_job' or 'extract_skills'. The backend routes/authorizes/prompts on this; it is NOT free-form prose. Frontend and backend agree on the set of task ids."
+      },
+      "instructions": {
+        "type": "string",
+        "default": "",
+        "description": "System prompt for the turn — the persona/rules the model follows. Maps to pyllum's chat.with_instructions(...). Empty string when the backend supplies the system prompt for this `task` itself."
+      },
+      "input": {
+        "type": "string",
+        "description": "The user turn / content to act on (the prompt passed to ask(...)). For structured tasks this is the source text the model reads to fill `schema`."
+      },
+      "schema": {
+        "anyOf": [
+          {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "JSON Schema constraining the response. Non-null → the backend runs a structured-output turn and `data` must honor this schema. null → a free-form text turn (the answer comes back in `text`). Maps to pyllum's chat.with_schema(...)."
+      },
+      "variables": {
+        "type": "object",
+        "additionalProperties": {},
+        "default": {},
+        "description": "Optional named values the backend interpolates into its prompt template for this `task` (e.g. { locale: 'fi', tone: 'formal' }). Keep secrets OUT of here — this travels from the browser."
+      }
+    },
+    "required": [
+      "task",
+      "input"
+    ],
+    "additionalProperties": false
+  },
+  "response_schema": {
+    "type": "object",
+    "properties": {
+      "task": {
+        "type": "string",
+        "description": "Echoes the request `task` so out-of-order responses are matchable."
+      },
+      "ok": {
+        "type": "boolean",
+        "description": "true → a success payload is in `data` (structured) or `text` (free-form). false → `error` is populated and both payload fields are null."
+      },
+      "data": {
+        "anyOf": [
+          {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The structured result honoring the request `schema`. Non-null only when the request carried a schema and ok=true; null otherwise."
+      },
+      "text": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null,
+        "description": "The free-form assistant answer. Non-null only when the request had NO schema and ok=true; null otherwise."
+      },
+      "error": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "schema_violation",
+                  "unknown_task",
+                  "rate_limited",
+                  "provider_error",
+                  "invalid_request",
+                  "internal"
+                ],
+                "description": "Machine-readable failure class. 'schema_violation' = the model could not honor `schema`; 'unknown_task' = the backend has no handler for `task`."
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable detail for logs/UI — not for control flow."
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Populated iff ok=false; null on success."
+      }
+    },
+    "required": [
+      "task",
+      "ok"
+    ],
+    "additionalProperties": false
+  },
+  "notes": [
+    "A request with schema=null is a free-form turn → the answer comes back in response.text. A request with a non-null schema is structured → the answer comes back in response.data honoring that schema.",
+    "`task` is a stable id both sides agree on; the backend authorizes/prompts on it. It is not free-form prose and is echoed back on the response for matching.",
+    "This envelope carries from the browser — keep secrets and API keys server-side; never place them in `variables`.",
+    "JSON keys stay camelCase to match the Zod source; a Python backend can alias them (e.g. pydantic populate_by_name) without changing the wire shape."
+  ]
+}
