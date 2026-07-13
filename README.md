@@ -217,6 +217,64 @@ handoff/
   .handoff-runs.json      # append-only history, oldest first
 ```
 
+## Runtime LLM contract — add LLM features to the front
+
+The two contracts above are **build-time**: they compile tests and reconcile API
+surfaces. But a shipped app also wants LLM functionality at **runtime** — its
+*end users* summarizing a job post, extracting skills, drafting a message. For
+that, reactullm-sdd ships a third, runtime contract: a small typed request/
+response envelope the React front and its FastAPI/pyllum backend both speak.
+
+It is deliberately **transport-free and framework-free** — no fetch, no React, no
+keys. Most apps already have an HTTP client; all that was missing was a shared,
+typed JSON shape to put on the wire. The envelope rides on whatever endpoint the
+app already exposes, and both sides validate against the **same** JSON Schema,
+[`reactullm-pyllum.runtime.json`](reactullm-pyllum.runtime.json), generated from
+[`src/runtime.ts`](src/runtime.ts):
+
+```bash
+npm run gen:runtime   # rewrites reactullm-pyllum.runtime.json; bump `version` on a schema change
+```
+
+The shape mirrors the build-time `ChatClient` seam (`withInstructions →
+withSchema → ask`), so there is one mental model across build-time and runtime:
+
+| Request field | Meaning |
+|---------------|---------|
+| `task` | Stable id both sides agree on (e.g. `summarize_job`). The backend routes/authorizes/prompts on it — **not** free-form prose. |
+| `input` | The user turn / content to act on. |
+| `instructions` | System prompt; empty → the backend supplies it for this `task`. |
+| `schema` | JSON Schema (or `null`). Non-null → structured turn, answer in `data`. `null` → free-form, answer in `text`. |
+| `variables` | Named values the backend interpolates into its prompt template. Untrusted browser input — no secrets. |
+
+The response echoes `task` and carries exactly one of `data` (structured) /
+`text` (free-form) on `ok: true`, or a machine-readable `error` (`code` +
+`message`) on `ok: false`.
+
+Frontend, using types straight from the plugin so the object is checked against
+the same source the backend validates:
+
+```ts
+import { type LLMRequest, LLMRequestSchema, LLMResponseSchema } from "reactullm-sdd";
+
+// structured task — the answer comes back in response.data honoring this schema
+const req: LLMRequest = LLMRequestSchema.parse({
+  task: "extract_skills",
+  input: resumeText,
+  schema: { type: "object", required: ["skills"], properties: {
+    skills: { type: "array", items: { type: "string" } } } },
+});
+const res = LLMResponseSchema.parse(await myHttpClient.post("/api/v1/llm", req));
+if (res.ok) use(res.data);          // free-form tasks read res.text instead
+```
+
+See [`examples/runtime/`](examples/runtime/) for the full frontend side (a
+one-line transport adapter plus a free-form and a structured call), and
+[`PYLLUM_RUNTIME_PROMPT.md`](PYLLUM_RUNTIME_PROMPT.md) for the brief that builds
+the matching pyllum/FastAPI handler. As with the other contracts, the connection
+is a single on/off env var (`REACTULLM_PYLLUM_RUNTIME_CONTRACT`): set → the
+backend serves the runtime endpoint; unset → it is off.
+
 ## Timestamped runs & the completion marker
 
 Every successful generation is a **run**, stamped with a sortable UTC id
