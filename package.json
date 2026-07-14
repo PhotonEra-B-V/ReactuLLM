@@ -4,19 +4,33 @@
   "description": "Spec-Driven Development for React — one TOML spec compiles to a red Vitest + React Testing Library suite plus an implementation brief.",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
   "bin": {
     "react-sdd": "./dist/cli.js"
   },
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "sdd": "tsx src/cli.ts",
     "gen:contract": "tsx scripts/gen-contract.mts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "//": "This CLI only emits test SOURCE as strings; it never imports React or a test runner. The APP that consumes the generated suites supplies those (jest or vitest, ts-jest/jest-environment-jsdom or the vitest equivalent, and @testing-library/{react,user-event,jest-dom}). They are listed under peerDependencies as documentation — install them in the consuming app, not here.",
   "dependencies": {

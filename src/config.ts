@@ -1,7 +1,7 @@
 /**
  * Project-local generation config — `reactullm.config.json`.
  *
- * ReactLLM is meant to be installed INTO a target project (a web app or a React
+ * ReactuLLM is meant to be installed INTO a target project (a web app or a React
  * Native app) and to read its generation settings from that project, rather than
  * having every `.toml` spec re-declare the same import lines. A
  * `reactullm.config.json` at the project root (or any parent of the output
