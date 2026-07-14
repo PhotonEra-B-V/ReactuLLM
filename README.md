@@ -105,6 +105,11 @@ identical.
 
 ## Usage
 
+> **Installing the framework itself?** You only need its own deps — not
+> Jest/Vitest or `@testing-library/*`. Those are peer dependencies the
+> *consuming app* supplies. See [CONTRIBUTING.md](CONTRIBUTING.md) for the
+> full dev setup.
+
 ```bash
 npm install   # framework deps only: @babel/parser, smol-toml, zod
 
