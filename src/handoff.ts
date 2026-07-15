@@ -25,7 +25,7 @@
 import { z } from "zod";
 
 /** JSON Schema is opaque here — we validate it is an object, not its contents. */
-const JsonSchemaObject = z.record(z.unknown());
+const JsonSchemaObject = z.record(z.string(), z.unknown());
 
 export const EndpointSchema = z.object({
   method: z
@@ -51,7 +51,7 @@ export type Endpoint = z.infer<typeof EndpointSchema>;
 
 export const ApiSurfaceSchema = z.object({
   entities: z
-    .record(JsonSchemaObject)
+    .record(z.string(), JsonSchemaObject)
     .default({})
     .describe(
       "Named entity shapes shared across endpoints (JSON Schema per entity), " +

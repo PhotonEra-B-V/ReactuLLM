@@ -25,7 +25,7 @@
 import { z } from "zod";
 
 /** JSON Schema is opaque here — we validate it is an object, not its contents. */
-const JsonSchemaObject = z.record(z.unknown());
+const JsonSchemaObject = z.record(z.string(), z.unknown());
 
 /**
  * One runtime LLM call. The frontend fills this; the backend honors it.
@@ -66,7 +66,7 @@ export const LLMRequestSchema = z.object({
         "chat.with_schema(...).",
     ),
   variables: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .default({})
     .describe(
       "Optional named values the backend interpolates into its prompt template " +
