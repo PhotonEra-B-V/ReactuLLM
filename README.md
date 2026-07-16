@@ -176,9 +176,6 @@ cp .env.example .env
 #   REACTULLM_PYLLUM_MODEL=gpt-5.4
 ```
 
-The pyllum-side implementation lives in the pyllum repo — see
-[`PYLLUM_PROMPT.md`](PYLLUM_PROMPT.md) for the brief that builds it.
-
 ### Bidirectional handoff — generate either side first
 
 The *planning* contract above is one-directional (reactullm tells pyllum how to
