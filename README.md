@@ -1,5 +1,9 @@
 # ReactuLLM SDD — Spec-Driven Development for React
 
+> ⚠️ **Alpha release.** This is early, pre-1.0 software. The API, spec format,
+> and generated output may change without notice between releases, and there may
+> be rough edges. Pin an exact version and review generated output before use.
+
 <img width="720" height="405" alt="Screenshot 2026-07-11 at 18 05 21" src="https://github.com/user-attachments/assets/eb6697bd-6e4d-4e1c-8711-fecbc2bfe601" />
 
 "Vybe code no more" do LLM agentic coding the right way.
@@ -380,7 +384,7 @@ npm test            # the framework's own suite (test/sdd.test.ts)
 npm run build       # emit dist/
 ```
 
-The framework's own tests (38 of them) prove the invariants: the coverage gate
+The framework's own tests (57 of them) prove the invariants: the coverage gate
 rejects an uncovered id, the safety gate rejects an import (and
 `require`/`eval`/`Function`/dynamic `import()`/`process`/reflection/non-TS), plan
 mode runs with no network, request mode fills the schema (via an in-memory
